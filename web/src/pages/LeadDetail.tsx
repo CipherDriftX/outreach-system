@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import type { LeadFact } from "../lib/types";
 
@@ -12,11 +12,19 @@ const GRADE_COLORS: Record<string, string> = {
 export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ["lead", id],
     queryFn: () => api.getLeadDetail(id!),
     enabled: !!id,
+  });
+
+  const offerMutation = useMutation({
+    mutationFn: () => api.generateOffer(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+    },
   });
 
   if (isLoading) return <div className="text-[#606078] text-sm">Loading…</div>;
@@ -31,7 +39,22 @@ export default function LeadDetail() {
         ← Back to leads
       </button>
 
-      <h2 className="text-lg font-semibold mb-6">Lead Detail</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-semibold">Lead Detail</h2>
+        <button
+          onClick={() => offerMutation.mutate()}
+          disabled={offerMutation.isPending}
+          className="px-3 py-2 bg-[#4a8fe7] text-white text-xs font-medium rounded-lg hover:bg-[#3a7fd7] transition-colors disabled:opacity-50"
+        >
+          {offerMutation.isPending ? "Building…" : "✧ Generate Offer"}
+        </button>
+      </div>
+
+      {offerMutation.isSuccess && (
+        <div className="bg-[#0a1a0f] border border-[#4eca7a] text-[#4eca7a] text-xs rounded-lg p-3 mb-4">
+          Offer generated. View it in the Offers screen.
+        </div>
+      )}
 
       <div className="grid grid-cols-4 gap-4 mb-8">
         <MiniStat label="Facts" value={data.fact_count} />

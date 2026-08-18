@@ -7,14 +7,14 @@ Parses the user's template text into tokens:
 - [if fact_type: value] ... [/if] — conditional block, rendered only if the
   referenced fact exists AND its grade meets the threshold
 
-The parser is pure and deterministic — no LLM involvement anywhere.
+Conditionals nest. The parser is pure and deterministic — no LLM anywhere.
 """
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Literal, Union
+from typing import Union
 
 
 @dataclass
@@ -83,55 +83,41 @@ CONDITION_VALUE_MAP: dict[str, str] = {
     "exists": "any",
 }
 
-_COND_RE = re.compile(r"\[if\s+([a-z_]+)\s*:\s*([a-z_]+)\](.*?)\[/if\]", re.DOTALL)
 _FACT_RE = re.compile(r"\[([a-z_]+)\]")
 _SIGNAL_RE = re.compile(r"\(([a-z_]+)\)")
+_COND_OPEN_RE = re.compile(r"\[if\s+([a-z_]+)\s*:\s*([a-z_]+)\]")
+_COND_CLOSE_RE = re.compile(r"\[/if\]")
 
 
 def parse_template(template_text: str) -> list[Token]:
     tokens: list[Token] = []
-    pos = 0
+    i = 0
+    n = len(template_text)
 
-    while pos < len(template_text):
-        # Try conditional block first (it contains its own parsing)
-        cond_match = _COND_RE.search(template_text, pos)
-        fact_match = _FACT_RE.search(template_text, pos)
-        signal_match = _SIGNAL_RE.search(template_text, pos)
+    while i < n:
+        fact_match = _FACT_RE.search(template_text, i)
+        signal_match = _SIGNAL_RE.search(template_text, i)
+        cond_match = _COND_OPEN_RE.search(template_text, i)
 
-        # Find the earliest match of any kind
         candidates = []
-        if cond_match:
-            candidates.append((cond_match.start(), "cond", cond_match))
         if fact_match:
-            candidates.append((fact_match.start(), "fact", fact_match))
+            candidates.append((fact_match.start(), "fact"))
         if signal_match:
-            candidates.append((signal_match.start(), "signal", signal_match))
+            candidates.append((signal_match.start(), "signal"))
+        if cond_match:
+            candidates.append((cond_match.start(), "cond"))
 
         if not candidates:
-            tokens.append(LiteralToken(template_text[pos:]))
+            tokens.append(LiteralToken(template_text[i:]))
             break
 
-        candidates.sort(key=lambda c: c[0])
-        start, kind, match = candidates[0]
+        start, kind = min(candidates, key=lambda c: c[0])
 
-        # Literal text before the match
-        if start > pos:
-            tokens.append(LiteralToken(template_text[pos:start]))
+        if start > i:
+            tokens.append(LiteralToken(template_text[i:start]))
 
-        if kind == "cond":
-            fact_type = COND_VALUE_MAP.get(match.group(1), match.group(1))
-            condition_value = match.group(2)
-            inner_tokens = parse_template(match.group(3))
-            tokens.append(
-                ConditionalBlock(
-                    condition_fact_type=fact_type,
-                    condition_value=condition_value,
-                    tokens=inner_tokens,
-                )
-            )
-            pos = match.end()
-        elif kind == "fact":
-            key = match.group(1)
+        if kind == "fact":
+            key = fact_match.group(1)
             tokens.append(
                 FactToken(
                     key=key,
@@ -139,15 +125,55 @@ def parse_template(template_text: str) -> list[Token]:
                     modifier=key.split("_")[-1] if key.startswith("gap_hypothesis") else "",
                 )
             )
-            pos = match.end()
-        else:
-            key = match.group(1)
+            i = fact_match.end()
+        elif kind == "signal":
+            key = signal_match.group(1)
             tokens.append(
                 SignalToken(key=key, field=SIGNAL_FIELD_MAP.get(key, "raw_text"))
             )
-            pos = match.end()
+            i = signal_match.end()
+        else:
+            fact_type = CONDITION_VALUE_MAP.get(cond_match.group(1), cond_match.group(1))
+            cond_value = cond_match.group(2)
+            inner_start = cond_match.end()
+
+            # Find the matching [/if] — nesting-aware
+            close_end = _find_matching_close(template_text, inner_start)
+            if close_end is None:
+                tokens.append(LiteralToken(template_text[i:]))
+                break
+
+            inner_tokens = parse_template(template_text[inner_start:close_end])
+            tokens.append(
+                ConditionalBlock(
+                    condition_fact_type=fact_type,
+                    condition_value=cond_value,
+                    tokens=inner_tokens,
+                )
+            )
+            i = close_end + len("[/if]")
 
     return tokens
+
+
+def _find_matching_close(text: str, start: int) -> int | None:
+    """Return the index of the [/if] that closes the block opening at `start`."""
+    depth = 1
+    j = start
+    while j < len(text) and depth > 0:
+        open_m = _COND_OPEN_RE.search(text, j)
+        close_m = _COND_CLOSE_RE.search(text, j)
+        if close_m is None:
+            return None
+        if open_m is not None and open_m.start() < close_m.start():
+            depth += 1
+            j = open_m.end()
+        else:
+            depth -= 1
+            if depth == 0:
+                return close_m.start()
+            j = close_m.end()
+    return None
 
 
 def extract_placeholders(template_text: str) -> dict[str, list[str]]:

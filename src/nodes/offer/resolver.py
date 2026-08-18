@@ -77,8 +77,14 @@ class Resolver:
         return str(value)
 
     def resolve_conditional(self, block: ConditionalBlock) -> bool:
+        # A conditional renders only if the referenced fact exists AND its
+        # grade meets the floor — a weak fact can't justify a confident block.
+        grade_rank = {"strong": 2, "moderate": 1, "weak": 0}
+        floor_rank = grade_rank.get(self.grade_floor, 1)
         matches = [
-            f for f in self.facts if f.get("fact_type") == block.condition_fact_type
+            f for f in self.facts
+            if f.get("fact_type") == block.condition_fact_type
+            and grade_rank.get(f.get("grade") or "weak", 0) >= floor_rank
         ]
         if block.condition_value == "any":
             return len(matches) > 0

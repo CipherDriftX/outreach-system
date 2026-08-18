@@ -20,6 +20,11 @@ export default function Signals() {
     queryFn: () => api.getSignals(100),
   });
 
+  const { data: adapters } = useQuery({
+    queryKey: ["adapters"],
+    queryFn: api.getAdapters,
+  });
+
   if (isLoading) return <div className="text-[#606078] text-sm">Loading…</div>;
 
   return (
@@ -31,10 +36,30 @@ export default function Signals() {
         </span>
       </div>
 
+      {adapters && adapters.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {adapters.map((a) => (
+            <span
+              key={a.name}
+              className="inline-flex items-center gap-2 bg-[#0e0e16] border border-[#1e1e2e] rounded-lg px-3 py-1.5 text-xs text-[#9898b0]"
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ backgroundColor: SOURCE_COLORS[a.name] || "#606078" }}
+              />
+              {a.name}
+              <span className="text-[#606078] font-mono">{a.source_type}</span>
+            </span>
+          ))}
+        </div>
+      )}
+
       {!signals || signals.length === 0 ? (
         <div className="bg-[#0e0e16] border border-[#1e1e2e] rounded-lg p-8 text-center">
           <p className="text-[#606078] text-sm">No signals captured yet.</p>
-          <p className="text-[#606078] text-xs mt-1">Run signal discovery to populate this view.</p>
+          <p className="text-[#606078] text-xs mt-1">
+            Start a signal discovery run from the Dashboard to populate this view.
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
