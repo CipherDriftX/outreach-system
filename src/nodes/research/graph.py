@@ -127,17 +127,41 @@ def _build_taxonomy(state: LeadResearchState) -> dict:
 
 
 def _track_a(state: LeadResearchState) -> dict:
+    from src.db.connection import get_connection, put_connection
     from src.nodes.research.track_a import persist_facts, research_obvious_facts
 
     lead = state.get("lead", {})
     signal = state.get("signal", {})
     result = research_obvious_facts(lead, signal)
     fact_ids = persist_facts(state["lead_id"], result.get("facts", []), "A")
+
+    # Backfill lead row with enrichment-discovered identity, never overwriting
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """UPDATE leads
+               SET company_name = COALESCE(company_name, %s),
+                   contact_name = COALESCE(contact_name, %s),
+                   contact_email = COALESCE(contact_email, %s)
+               WHERE id = %s""",
+            [
+                result.get("company_name"),
+                result.get("contact_name"),
+                result.get("contact_email"),
+                state["lead_id"],
+            ],
+        )
+        conn.commit()
+        cur.close()
+    finally:
+        put_connection(conn)
+
     return {
         "discovered_fact_ids": fact_ids,
         "track_a_done": True,
         "node_logs": [
-            {"node_name": "track_a", "lead_id": state["lead_id"], "input_summary": {"facts": len(fact_ids)}}
+            {"node_name": "track_a", "thread_id": "", "input_summary": {"facts": len(fact_ids)}}
         ],
     }
 

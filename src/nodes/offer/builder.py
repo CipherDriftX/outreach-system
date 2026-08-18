@@ -147,7 +147,6 @@ def generate_offer_for_lead(lead_id: str, grade_floor: str = "moderate") -> dict
     )
 
     from src.db.connection import get_connection, put_connection
-
     business_id = get_business_id()
     if not business_id:
         return None
@@ -219,5 +218,14 @@ def generate_offer_for_lead(lead_id: str, grade_floor: str = "moderate") -> dict
         resolved_fact_ids=result["resolved_fact_ids"],
         unresolved_placeholders=result["unresolved_placeholders"],
     )
+
+    conn2 = get_connection()
+    try:
+        cur = conn2.cursor()
+        cur.execute("UPDATE leads SET status = 'offer_drafted' WHERE id = %s", [lead_id])
+        conn2.commit()
+        cur.close()
+    finally:
+        put_connection(conn2)
 
     return {**result, "offer_id": offer_id, "lead_id": lead_id}
