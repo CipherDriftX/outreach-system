@@ -1,3 +1,6 @@
+# PostgreSQL (embedded, not committed)
+.local/
+
 # Python
 __pycache__/
 *.py[cod]

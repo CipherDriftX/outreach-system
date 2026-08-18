@@ -95,6 +95,9 @@ CREATE TABLE IF NOT EXISTS offer_templates (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS uq_offer_templates_active
+    ON offer_templates(business_id) WHERE is_active;
+
 CREATE TABLE IF NOT EXISTS offers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lead_id UUID NOT NULL REFERENCES leads(id),
@@ -130,6 +133,20 @@ ON CONFLICT DO NOTHING;
 """
 
 
+def _get_default_template() -> str:
+    try:
+        import yaml
+        from pathlib import Path
+        path = Path(__file__).resolve().parents[2] / "config" / "governors.yaml"
+        if path.exists():
+            with open(path) as f:
+                data = yaml.safe_load(f) or {}
+                return data.get("craft", {}).get("default_template", "")
+    except Exception:
+        pass
+    return ""
+
+
 def create_schema(conn) -> None:
     cur = conn.cursor()
     try:
@@ -151,6 +168,22 @@ def seed_defaults(conn) -> None:
         conn.rollback()
     finally:
         cur.close()
+
+    template = _get_default_template()
+    if template:
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                """INSERT INTO offer_templates (business_id, name, template_text, is_active)
+                   SELECT id, 'default', %s, true FROM businesses LIMIT 1
+                   ON CONFLICT (business_id) WHERE is_active DO NOTHING""",
+                [template],
+            )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        finally:
+            cur.close()
 
 
 def ensure_schema() -> None:

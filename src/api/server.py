@@ -5,6 +5,7 @@ Serves the API and the built React SPA in production.
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -14,7 +15,18 @@ from fastapi.staticfiles import StaticFiles
 
 from src.api import dashboard, leads, offers, research, runs, signals, settings as settings_mod
 
-app = FastAPI(title="Outreach OS API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    try:
+        from src.db.schema import ensure_schema
+        ensure_schema()
+    except Exception:
+        pass
+    yield
+
+
+app = FastAPI(title="Outreach OS API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
