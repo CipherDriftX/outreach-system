@@ -1,0 +1,55 @@
+# Outreach OS — Governor configuration
+# Every number in one file. This is what the Settings UI edits live.
+
+research:
+  # Per-adapter signal discovery
+  max_rounds_per_adapter: 10
+  max_tree_depth: 5
+  saturation_novelty_threshold: 0.05
+  saturation_consecutive_rounds: 3
+
+  # Per-lead research
+  max_rounds_per_lead_vertical: 8
+  max_lead_tree_depth: 5
+  lead_saturation_novelty_threshold: 0.05
+  lead_saturation_consecutive_rounds: 3
+
+  # Budget
+  budget_limit_usd_per_run: 5.0
+  per_lead_cost_ceiling_usd: 0.50
+  per_lead_time_budget_seconds: 300
+
+  # Evidence grading
+  min_corroboration_for_strong: 3
+  min_effect_size: 1.5
+  max_recency_days_strong: 90
+
+  # Gap hypothesis
+  min_gap_grade: "moderate"
+
+craft:
+  draft_regeneration_limit: 3
+  llm_cost_per_lead_usd: 0.10
+
+  # Template
+  default_template: |
+    Subject: [gap_hypothesis_summary] — quick question
+
+    Hi [contact_first_name],
+
+    I came across your (signal_source_type) about (signal_raw_text_snippet) and it caught my attention because [gap_hypothesis_explanation].
+
+    At Plarix, we build autonomous AI systems that perform real business processes — [pain_summary] is exactly the kind of operational work we handle.
+
+    [if tech_stack: any]
+    We integrate with tools like [tech_stack_primary_tools].
+    [/if]
+
+    [if recent_activity: funding_or_hiring]
+    With [recent_activity_detail], now is when teams typically operationalize [gap_hypothesis_category].
+    [/if]
+
+    Worth a 10-minute call to see if this fits?
+
+    Best,
+    Aryan
