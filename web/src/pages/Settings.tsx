@@ -23,12 +23,14 @@ export default function Settings() {
         </Section>
 
         <Section title="Research Governors">
-          {governors.research && typeof governors.research === "object" && (
+          {typeof governors.research === "object" && governors.research !== null && (
             <div className="grid grid-cols-2 gap-3">
               {Object.entries(governors.research as Record<string, unknown>).map(([key, value]) => (
                 <div key={key} className="flex justify-between items-center py-1.5">
                   <span className="text-xs text-[#9898b0] font-mono">{key}</span>
-                  <span className="text-xs text-[#e4e4ec] font-mono">{String(value)}</span>
+                  <span className="text-xs text-[#e4e4ec] font-mono">
+                    {typeof value === "object" ? JSON.stringify(value).slice(0, 40) : String(value)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -36,14 +38,16 @@ export default function Settings() {
         </Section>
 
         <Section title="Craft Governors">
-          {governors.craft && typeof governors.craft === "object" && (
+          {typeof governors.craft === "object" && governors.craft !== null && (
             <div className="grid grid-cols-2 gap-3">
               {Object.entries(governors.craft as Record<string, unknown>)
                 .filter(([k]) => k !== "default_template")
                 .map(([key, value]) => (
                   <div key={key} className="flex justify-between items-center py-1.5">
                     <span className="text-xs text-[#9898b0] font-mono">{key}</span>
-                    <span className="text-xs text-[#e4e4ec] font-mono">{String(value)}</span>
+                    <span className="text-xs text-[#e4e4ec] font-mono">
+                      {typeof value === "object" ? JSON.stringify(value).slice(0, 40) : String(value)}
+                    </span>
                   </div>
                 ))}
             </div>
@@ -55,10 +59,10 @@ export default function Settings() {
             Configure API keys in <code className="text-[#9898b0]">.env</code>. Keys are never displayed here.
           </div>
           <div className="mt-2 space-y-1 text-xs text-[#9898b0]">
-            <div>OPENROUTER_API_KEY: {process.env.NODE_ENV === "development" ? "•••• (set in .env)" : "hidden"}</div>
-            <div>REDDIT_CLIENT_ID: configured via .env</div>
-            <div>TWITTER_BEARER_TOKEN: configured via .env</div>
-            <div>GITHUB_TOKEN: configured via .env</div>
+            <div>OPENROUTER_API_KEY: set via .env</div>
+            <div>REDDIT_CLIENT_ID: set via .env</div>
+            <div>TWITTER_BEARER_TOKEN: set via .env</div>
+            <div>GITHUB_TOKEN: set via .env</div>
           </div>
         </Section>
       </div>

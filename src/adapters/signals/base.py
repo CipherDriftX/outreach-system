@@ -8,7 +8,7 @@ new architecture.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Protocol, TypedDict
+from typing import Protocol, TypedDict, runtime_checkable
 
 
 class RawSignal(TypedDict):
@@ -21,6 +21,7 @@ class RawSignal(TypedDict):
     matched_pattern: str      # which intent pattern fired
 
 
+@runtime_checkable
 class SignalSourceAdapter(Protocol):
     name: str
     source_type: str

@@ -33,9 +33,10 @@ def _load_all() -> None:
                 attr = getattr(module, attr_name)
                 if (
                     isinstance(attr, type)
-                    and issubclass(attr, SignalSourceAdapter)
-                    and attr is not SignalSourceAdapter
                     and attr.__module__ == module_name
+                    and attr.__name__.endswith("Adapter")
+                    and hasattr(attr, "search")
+                    and hasattr(attr, "check_quota")
                 ):
                     instance = attr()
                     _ADAPTERS[instance.name] = instance
