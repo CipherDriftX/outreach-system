@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from src.api import dashboard, leads, offers, runs, signals, settings as settings_mod
+from src.api import dashboard, leads, offers, research, runs, signals, settings as settings_mod
 
 app = FastAPI(title="Outreach OS API", version="0.1.0")
 
@@ -26,6 +26,7 @@ app.add_middleware(
 
 app.include_router(dashboard.router, prefix="/api")
 app.include_router(runs.router, prefix="/api")
+app.include_router(research.router, prefix="/api")
 app.include_router(signals.router, prefix="/api")
 app.include_router(leads.router, prefix="/api")
 app.include_router(offers.router, prefix="/api")

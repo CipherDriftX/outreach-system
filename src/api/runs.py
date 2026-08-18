@@ -158,6 +158,14 @@ async def _run_graph(business_id: str, run_id: str, thread_id: str, taxonomy: di
             _RUNS[run_id]["error"] = str(exc)
             _RUNS[run_id]["finished_at"] = datetime.now(timezone.utc).isoformat()
 
+    # Auto-trigger Node 2 research on leads created by this run
+    try:
+        from src.api.research import api_run_research
+
+        api_run_research()
+    except Exception:
+        pass
+
 
 def _load_taxonomy(business_id: str) -> dict:
     from src.db.connection import get_connection, put_connection

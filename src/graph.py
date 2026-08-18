@@ -236,6 +236,28 @@ def _check_saturation(state: SignalGraphState) -> dict:
     return {"current_phase": "done"}
 
 
+def _fan_out_research(state: SignalGraphState) -> dict:
+    """After discovery completes, hand off to per-lead research.
+
+    The per-lead subgraphs run as a separate operational stage (see
+    src/api/research.py) — one subgraph instance per triaged lead, in
+    parallel, each failing alone. This node records the handoff.
+    """
+    from src.db.queries import get_leads_by_status
+
+    leads = get_leads_by_status("found")
+
+    return {
+        "node_logs": [
+            {
+                "node_name": "fan_out_research",
+                "thread_id": state.get("thread_id", ""),
+                "input_summary": {"leads_ready_for_research": len(leads)},
+            }
+        ],
+    }
+
+
 def _detect_splits(state: SignalGraphState) -> dict:
     from src.db.connection import get_connection, put_connection
     from src.nodes.signal.split import detect_splits
@@ -290,14 +312,14 @@ def route_after_saturation(state: SignalGraphState) -> list[str]:
         return ["select_next_vertical"]
     if phase == "splitting":
         return ["detect_splits"]
-    return [END]
+    return ["fan_out_research"]
 
 
 def route_after_splits(state: SignalGraphState) -> list[str]:
     phase = state.get("current_phase", "done")
     if phase == "discovering":
         return ["select_next_vertical"]
-    return [END]
+    return ["fan_out_research"]
 
 
 def build_graph() -> StateGraph:
@@ -309,6 +331,7 @@ def build_graph() -> StateGraph:
     graph.add_node("triage_signals", _triage_signals)
     graph.add_node("check_saturation", _check_saturation)
     graph.add_node("detect_splits", _detect_splits)
+    graph.add_node("fan_out_research", _fan_out_research)
 
     graph.add_edge(START, "init_run")
     graph.add_edge("init_run", "select_next_vertical")
@@ -318,13 +341,14 @@ def build_graph() -> StateGraph:
     graph.add_conditional_edges(
         "check_saturation",
         route_after_saturation,
-        ["select_next_vertical", "detect_splits", END],
+        ["select_next_vertical", "detect_splits", "fan_out_research"],
     )
     graph.add_conditional_edges(
         "detect_splits",
         route_after_splits,
-        ["select_next_vertical", END],
+        ["select_next_vertical", "fan_out_research"],
     )
+    graph.add_edge("fan_out_research", END)
 
     return graph
 
