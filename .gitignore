@@ -30,6 +30,7 @@ logs/
 # Node
 node_modules/
 web/dist/
+*.tsbuildinfo
 
 # Docker
 .env.docker
