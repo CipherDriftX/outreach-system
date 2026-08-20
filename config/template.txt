@@ -1,0 +1,24 @@
+Subject: [gap_hypothesis_summary]
+
+[contact_first_name],
+
+I came across your (signal_source_type) on (signal_source_name) about (signal_raw_text_snippet).
+
+At Plarix, we build autonomous AI systems that perform real business processes -- [pain_summary] is exactly the kind of operational work we handle.
+
+[if tech_stack: any]
+We integrate with [tech_stack_primary_tools].
+[/if]
+
+[if recent_activity: funding_or_hiring]
+Given [recent_activity_detail], this is when teams typically operationalize [gap_hypothesis_category].
+[/if]
+
+[if competitors: switched_from]
+We have helped teams switch from [competitor_name] -- happy to share how.
+[/if]
+
+Worth ten minutes this week?
+
+Aryan
+Plarix

@@ -4,14 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "outreach-os"
-version = "0.1.0"
-description = "Autonomous email outreach system — recursive signal discovery, per-lead deep research, template-based offer builder"
+version = "0.2.0"
+description = "Autonomous outreach research pipeline — signal discovery, per-lead deep research, template-based offer builder"
 requires-python = ">=3.11"
 dependencies = [
     "langgraph>=0.2.0",
-    "langgraph-checkpoint-postgres>=2.0.0",
-    "psycopg[binary]>=3.1.0",
-    "psycopg-pool>=3.2.0",
     "openai>=1.50.0",
     "httpx>=0.27.0",
     "pydantic>=2.8.0",
@@ -22,8 +19,8 @@ dependencies = [
     "uuid7>=0.1.0",
     "networkx>=3.0",
     "pyyaml>=6.0",
-    "fastapi>=0.115.0",
-    "uvicorn[standard]>=0.30.0",
+    "openpyxl>=3.1.0",
+    "pandas>=2.2.0",
 ]
 
 [project.optional-dependencies]
