@@ -126,6 +126,9 @@ def cmd_full(args: argparse.Namespace) -> None:
     template = load_template()
     if template and leads:
         leads = craft_offers(leads, signals)
+        print_craft_summary(leads)
+    elif not template:
+        print("  No template found. Create config/template.txt for offer generation.")
 
     ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     path = create_workbook(signals, leads, f"signals_{ts}.xlsx")

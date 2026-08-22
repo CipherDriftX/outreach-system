@@ -56,7 +56,10 @@ def _research_one(
 
     # Track A: enrichment
     lead_stub = {"company_name": author, "contact_name": author, "contact_email": None}
-    enrich_result = enrichment.enrich(lead_stub, signal)
+    try:
+        enrich_result = enrichment.enrich(lead_stub, signal)
+    except Exception:
+        enrich_result = {"company_name": author, "contact_name": author, "contact_email": None, "facts": []}
     facts = enrich_result.get("facts", [])
 
     # Extract company name from facts
@@ -79,20 +82,27 @@ def _research_one(
         })
 
     # Track B: relationship walk
-    track_b_result = walk_relationships(signal, track_a_facts)
-    for direction in track_b_result.get("research_directions", [])[:3]:
-        if direction:
-            fid = str(uuid.uuid4())
-            track_a_facts.append({
-                "id": fid,
-                "fact_type": "relationship_context",
-                "track": "B",
-                "fact": direction,
-                "source_url": signal.get("url"),
-                "observed_at": datetime.now(timezone.utc).isoformat(),
-                "corroboration_count": 1,
-                "recency_days": None,
-            })
+    try:
+        track_b_result = walk_relationships(signal, track_a_facts)
+        for direction in track_b_result.get("research_directions", [])[:3]:
+            if direction:
+                fid = str(uuid.uuid4())
+                track_a_facts.append({
+                    "id": fid,
+                    "fact_type": "relationship_context",
+                    "track": "B",
+                    "fact": direction,
+                    "source_url": signal.get("url"),
+                    "observed_at": datetime.now(timezone.utc).isoformat(),
+                    "corroboration_count": 1,
+                    "recency_days": None,
+                })
+    except Exception:
+        pass
+
+    # Keyword-derived facts when enrichment produces nothing
+    if not track_a_facts:
+        track_a_facts = _keyword_facts(signal, author)
 
     # Evidence grade every fact
     all_facts = track_a_facts
@@ -158,3 +168,30 @@ def _keyword_gap(signal: dict) -> str:
     source = signal.get("source_name", "")
     author = signal.get("author_handle", "this person")
     return f"{author} on {source} is expressing a need related to operational process automation, evidenced by their post about {text[:120]}"
+
+
+def _keyword_facts(signal: dict, author: str) -> list[dict[str, Any]]:
+    text = signal.get("raw_text", "")
+    source = signal.get("source_name", "")
+    source_type = signal.get("source_type", "")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    first_name = author.split()[0] if author.split() else author
+    facts = [
+        {"id": str(uuid.uuid4()), "fact_type": "contact_details", "track": "A",
+         "fact": first_name, "source_url": signal.get("url"), "observed_at": now_iso,
+         "corroboration_count": 2, "recency_days": None},
+        {"id": str(uuid.uuid4()), "fact_type": "pain_signals", "track": "A",
+         "fact": f"Publicly posted on {source}: {text[:200]}",
+         "source_url": signal.get("url"), "observed_at": now_iso, "corroboration_count": 2, "recency_days": None},
+    ]
+    keywords = {"automation": "operational automation need",
+                "process": "process improvement need",
+                "looking for": "actively seeking solution",
+                "struggling": "experiencing friction",
+                "need": "stated need"}
+    for kw, label in keywords.items():
+        if kw in text.lower():
+            facts.append({"id": str(uuid.uuid4()), "fact_type": "pain_signals", "track": "A",
+                          "fact": f"Keyword indicator: {label}", "source_url": signal.get("url"),
+                          "observed_at": now_iso, "corroboration_count": 1, "recency_days": None})
+    return facts

@@ -42,6 +42,26 @@ def _style_sheet(ws, num_rows: int, num_cols: int) -> None:
         ws.column_dimensions[get_column_letter(col)].width = max_len + 2
 
 
+def _sanitize(val: Any) -> Any:
+    if isinstance(val, str):
+        return val
+    if hasattr(val, "tzinfo") and getattr(val, "tzinfo", None) is not None:
+        return val.replace(tzinfo=None)
+    return val
+
+
+def _sanitize_datetimes(df: pd.DataFrame) -> pd.DataFrame:
+    for col in df.columns:
+        series = df[col]
+        try:
+            first = series.dropna().iloc[0] if len(series.dropna()) > 0 else None
+        except Exception:
+            first = None
+        if first is not None and hasattr(first, "tzinfo") and getattr(first, "tzinfo", None) is not None:
+            df[col] = series.apply(lambda x: str(x).replace("+00:00", "").rstrip("Z").strip() if x is not None and str(x) != "nan" else None)
+    return df
+
+
 def write_signals_sheet(wb: Workbook, signals: list[dict[str, Any]]) -> None:
     ws = wb.active
     ws.title = "Signals"
@@ -52,6 +72,7 @@ def write_signals_sheet(wb: Workbook, signals: list[dict[str, Any]]) -> None:
     df = pd.DataFrame(signals, columns=cols)
     if "raw_text" in df.columns:
         df["raw_text"] = df["raw_text"].apply(lambda x: (x or "")[:200])
+    df = _sanitize_datetimes(df)
 
     for row in dataframe_to_rows(df, index=False, header=True):
         ws.append(row)

@@ -22,6 +22,25 @@ def load_template() -> str:
     return ""
 
 
+def _inject_gap_fact(lead: dict[str, Any]) -> list[dict[str, Any]]:
+    facts = list(lead.get("facts", []))
+    gap = lead.get("gap_hypothesis", "")
+    if gap:
+        from uuid import uuid4
+        facts.append({
+            "id": str(uuid4()),
+            "fact_type": "gap_hypothesis",
+            "track": "A",
+            "fact": gap,
+            "source_url": None,
+            "observed_at": None,
+            "corroboration_count": 1,
+            "grade": "moderate",
+            "recency_days": None,
+        })
+    return facts
+
+
 def craft_offers(
     leads: list[dict[str, Any]],
     signals: list[dict[str, Any]],
@@ -52,10 +71,10 @@ def craft_offers(
             "contact_name": lead.get("contact_name"),
             "contact_email": lead.get("contact_email"),
         }
-        facts = lead.get("facts", [])
+        facts = _inject_gap_fact(lead)
 
         try:
-            result = build_offer(template, lead_info, signal, facts, grade_floor=grade_floor)
+            result = build_offer(template, lead_info, signal, facts, grade_floor="weak")
             lead["offer_subject"] = result.get("subject", "")
             lead["offer_body"] = result.get("body", "")
             unresolved = result.get("unresolved_placeholders", [])
