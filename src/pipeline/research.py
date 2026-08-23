@@ -27,9 +27,11 @@ async def _research_one(
     if not signal or not lead_id:
         return None
 
+    author = signal.get("author_handle", "") or ""
+    first_name = author.split()[0] if author.split() else author
     lead_info = {
-        "company_name": lead.get("company_name") or signal.get("author_handle", ""),
-        "contact_name": lead.get("contact_name") or signal.get("author_handle", ""),
+        "company_name": lead.get("company_name") or author,
+        "contact_name": lead.get("contact_name") or first_name,
         "contact_email": None,
     }
 
@@ -46,23 +48,24 @@ async def _research_one(
 
     facts = final.get("discovered_facts", [])
     gap = final.get("gap_hypothesis", {})
-    lead_info = final.get("lead", lead_info)
+    enriched = final.get("lead", {})
+    company_name = enriched.get("company_name") or lead_info.get("company_name")
+    contact_name = enriched.get("contact_name") or first_name
+    contact_email = enriched.get("contact_email")
+    if contact_email and "@" not in str(contact_email):
+        contact_email = None
 
     strong = sum(1 for f in facts if f.get("grade") == "strong")
     moderate = sum(1 for f in facts if f.get("grade") == "moderate")
     weak = sum(1 for f in facts if f.get("grade") == "weak")
 
-    email = lead_info.get("contact_email")
-    if email and "@" not in str(email):
-        email = None
-
     return {
         "lead_id": lead_id,
         "signal_id": lead.get("signal_id", ""),
         "triage_score": lead.get("triage_score", 0),
-        "company_name": lead_info.get("company_name"),
-        "contact_name": lead_info.get("contact_name"),
-        "contact_email": email,
+        "company_name": company_name,
+        "contact_name": contact_name,
+        "contact_email": contact_email,
         "gap_hypothesis": gap.get("hypothesis", ""),
         "facts": facts,
         "facts_strong": strong,

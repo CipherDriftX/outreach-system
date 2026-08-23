@@ -49,6 +49,8 @@ def discover(
     try:
         from src.nodes.signal.taxonomy import build_taxonomy
         taxonomy = build_taxonomy(icp_root, "")
+        if taxonomy and taxonomy.get("verticals"):
+            taxonomy["verticals"] = taxonomy["verticals"][:3]
     except Exception:
         pass
 
