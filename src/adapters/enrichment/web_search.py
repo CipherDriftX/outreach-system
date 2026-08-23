@@ -130,5 +130,5 @@ Return ONLY valid JSON:
                 for f in facts
                 if f.get("fact")
             ]
-        except (json.JSONDecodeError, TypeError):
+        except Exception:
             return []

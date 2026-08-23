@@ -7,6 +7,7 @@ Finds corroborating signals and connections a keyword search can't reach.
 
 from __future__ import annotations
 
+import json as _json
 from typing import Any
 
 from src.llm.cascade import complete_tier
@@ -35,12 +36,10 @@ Return ONLY valid JSON:
   "research_directions": ["..."],
   "corroboration_notes": "..."}}"""
 
-    import json
-
     result = complete_tier("mid", prompt)
     try:
-        return json.loads(result.get("content", "{}"))
-    except (json.JSONDecodeError, TypeError):
+        return _json.loads(result.get("content", "{}"))
+    except Exception:
         return {"edges": [], "research_directions": [], "corroboration_notes": ""}
 
 

@@ -109,7 +109,7 @@ Return ONLY valid JSON array of judgments:
         judgments = json.loads(result.get("content", "[]"))
         if isinstance(judgments, list):
             return [j for j in judgments if j.get("label") is not None and j.get("label") != "noise"]
-    except (json.JSONDecodeError, TypeError):
+    except Exception:
         pass
 
     return []

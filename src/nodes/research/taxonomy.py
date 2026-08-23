@@ -53,7 +53,7 @@ Return ONLY valid JSON:
                 "llm_seed": True,
                 "cost_usd": result.get("cost_usd", 0.0),
             }
-    except (json.JSONDecodeError, TypeError):
+    except Exception:
         pass
 
     return {

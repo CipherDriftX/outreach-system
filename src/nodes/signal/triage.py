@@ -41,7 +41,7 @@ Return ONLY valid JSON: {{"score": 0-3, "reasoning": "one sentence why"}}"""
             "reasoning": data.get("reasoning", ""),
             "cost_usd": result.get("cost_usd", 0.0),
         }
-    except (json.JSONDecodeError, TypeError, ValueError):
+    except Exception:
         return {"score": 0, "reasoning": "parse error", "cost_usd": result.get("cost_usd", 0.0)}
 
 

@@ -73,9 +73,9 @@ class LLMClient:
             self._client = OpenAI(
                 api_key=self._config.openrouter.api_key,
                 base_url=self._config.openrouter.base_url,
-                default_headers={
+default_headers={
                     "HTTP-Referer": "https://github.com/CipherDriftX/outreach-system",
-                    "X-Title": "Outreach OS — Plarix",
+                    "X-Title": "Outreach OS - Plarix",
                 },
             )
         return self._client

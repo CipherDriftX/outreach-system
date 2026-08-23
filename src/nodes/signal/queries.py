@@ -7,6 +7,7 @@ signals. Never reissues an identical query.
 
 from __future__ import annotations
 
+import json as _json
 from typing import Any
 
 from src.llm.cascade import complete_tier
@@ -24,18 +25,17 @@ def generate_intent_queries(
     prompt = f"""Generate 3-5 new search queries for finding {vertical.get("label")} signals.
 The vertical context: {vertical.get("description", "")}
 
-Queries already tried (DO NOT repeat these): {json(previous_queries[-20:]) if previous_queries else "none"}
-Patterns that returned results: {json(successful_patterns[-5:]) if successful_patterns else "none"}
+Queries already tried (DO NOT repeat these): {_json.dumps(previous_queries[-20:]) if previous_queries else "none"}
+Patterns that returned results: {_json.dumps(successful_patterns[-5:]) if successful_patterns else "none"}
 
 Return ONLY a JSON array of strings. Each string is a concrete search query."""
 
-    import json
     result = complete_tier("cheap", prompt)
     try:
-        queries = json.loads(result.get("content", "[]"))
+        queries = _json.loads(result.get("content", "[]"))
         if isinstance(queries, list) and all(isinstance(q, str) for q in queries):
             return [q for q in queries if q not in previous_queries]
-    except (json.JSONDecodeError, TypeError):
+    except Exception:
         pass
     return _seed_queries(vertical)
 

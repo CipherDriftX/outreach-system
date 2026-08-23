@@ -55,7 +55,7 @@ Return ONLY valid JSON:
             "supporting_fact_types": data.get("supporting_fact_types", []),
             "cost_usd": result.get("cost_usd", 0.0),
         }
-    except (json.JSONDecodeError, TypeError):
+    except Exception:
         return {"hypothesis": "", "cost_usd": result.get("cost_usd", 0.0)}
 
 

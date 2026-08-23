@@ -41,15 +41,14 @@ Return ONLY valid JSON — no preamble, no explanation. Format:
 
     try:
         data = json.loads(raw)
-    except json.JSONDecodeError:
-        # Try to extract JSON from markdown code blocks
+    except Exception:
         if "```json" in raw:
             raw = raw.split("```json")[1].split("```")[0].strip()
         elif "```" in raw:
             raw = raw.split("```")[1].split("```")[0].strip()
         try:
             data = json.loads(raw)
-        except json.JSONDecodeError:
+        except Exception:
             data = {"verticals": _default_verticals()}
 
     return {

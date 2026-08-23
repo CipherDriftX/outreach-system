@@ -46,5 +46,5 @@ Return ONLY valid JSON:
             "key_points": data.get("key_points", []),
             "cost_usd": result.get("cost_usd", 0.0),
         }
-    except (json.JSONDecodeError, TypeError):
+    except Exception:
         return {"summary": "", "key_points": [], "cost_usd": result.get("cost_usd", 0.0)}
